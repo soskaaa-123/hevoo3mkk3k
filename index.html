@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PROSOSKA STATION</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --primary: #e91e63; --dark: #0a0a0a; --card: #151515; --success: #4caf50; --warning: #ff9800; --danger: #f44336; --info: #2196f3; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--dark); color: #fff; min-height: 100vh; }
+        
+        .lang-toggle { position: fixed; top: 1rem; left: 1rem; z-index: 1001; background: var(--card); border: 2px solid var(--primary); border-radius: 50px; padding: 0.5rem 1rem; cursor: pointer; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
+        .lang-toggle:hover { background: var(--primary); }
+        
+        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+        .auth-box { background: var(--card); border: 2px solid var(--primary); border-radius: 24px; padding: 3rem; width: 100%; max-width: 450px; text-align: center; position: relative; }
+        .auth-logo { font-size: 2.5rem; font-weight: 900; color: var(--primary); margin-bottom: 0.5rem; }
+        .auth-tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .auth-tab { flex: 1; padding: 1rem; background: transparent; border: none; color: #888; font-size: 1.1rem; font-weight: 700; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -1rem; }
+        .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .auth-form { display: none; }
+        .auth-form.active { display: block; }
+        .form-group { margin-bottom: 1.5rem; text-align: left; }
+        [dir="rtl"] .form-group { text-align: right; }
+        .form-label { display: block; margin-bottom: 0.5rem; color: #888; font-weight: 600; }
+        .form-input { width: 100%; padding: 1rem; background: rgba(255,255,255,0.05); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; font-size: 1rem; }
+        .form-input:focus { outline: none; border-color: var(--primary); }
+        .btn-auth { width: 100%; padding: 1.25rem; background: var(--primary); border: none; border-radius: 12px; color: white; font-size: 1.2rem; font-weight: 800; cursor: pointer; margin-top: 1rem; }
+        .btn-auth:hover { opacity: 0.9; }
+        
+        .google-btn { width: 100%; padding: 1rem; background: #4285F4; border: none; border-radius: 12px; color: white; font-size: 1rem; font-weight: 700; cursor: pointer; margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .google-btn:hover { background: #357ae8; }
+        .divider { display: flex; align-items: center; margin: 1rem 0; color: #888; }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.2); }
+        .divider span { padding: 0 1rem; }
+        
+        .forgot-link { color: var(--primary); text-decoration: none; font-size: 0.9rem; display: block; margin-top: 0.5rem; cursor: pointer; }
+        .forgot-link:hover { text-decoration: underline; }
+        
+        .forgot-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1001; align-items: center; justify-content: center; padding: 2rem; }
+        .forgot-modal.active { display: flex; }
+        .forgot-content { background: var(--card); border: 2px solid var(--primary); border-radius: 24px; padding: 2rem; width: 100%; max-width: 400px; text-align: center; }
+        
+        #mainApp { display: none; }
+        .header { background: var(--primary); padding: 1rem 2rem; position: sticky; top: 0; z-index: 100; }
+        .header-content { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-size: 1.8rem; font-weight: 900; }
+        .user-info { display: flex; align-items: center; gap: 1.5rem; }
+        .balance-pill { background: rgba(0,0,0,0.3); padding: 0.75rem 1.5rem; border-radius: 50px; display: flex; align-items: center; gap: 0.5rem; font-weight: 700; }
+        .btn-header { background: rgba(255,255,255,0.2); border: none; color: white; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 0.9rem; }
+        .btn-logout { background: var(--danger); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 2rem; }
+        
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .tab { padding: 1rem 2rem; background: var(--card); border: 2px solid transparent; border-radius: 12px; cursor: pointer; font-weight: 700; }
+        .tab.active { border-color: var(--primary); }
+        .section { display: none; }
+        .section.active { display: block; }
+        
+        .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+        .service-card { background: var(--card); border: 2px solid rgba(255,255,255,0.05); border-radius: 20px; padding: 1.5rem; cursor: pointer; transition: all 0.3s; }
+        .service-card:hover { transform: translateY(-5px); border-color: var(--primary); }
+        .service-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem; }
+        .service-icon { font-size: 2.5rem; }
+        .service-name { font-size: 1.2rem; font-weight: 800; }
+        .price-tag { background: var(--primary); padding: 0.5rem 1rem; border-radius: 8px; font-weight: 800; }
+        .service-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); }
+        .stat { text-align: center; }
+        .stat-value { color: var(--primary); font-weight: 800; }
+        
+        .add-balance-section { background: var(--card); border: 2px solid rgba(233,30,99,0.3); border-radius: 24px; padding: 2rem; text-align: center; }
+        .section-title { font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--primary); }
+        .preset-amounts { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .amount-btn { background: rgba(233,30,99,0.1); border: 2px solid var(--primary); color: white; padding: 1rem 2rem; border-radius: 12px; cursor: pointer; font-weight: 700; }
+        .amount-btn.selected { background: var(--primary); }
+        .custom-amount { display: flex; gap: 1rem; justify-content: center; align-items: center; margin: 1rem 0; }
+        .custom-input { background: rgba(255,255,255,0.05); border: 2px solid var(--primary); color: white; padding: 1rem; border-radius: 12px; width: 150px; text-align: center; }
+        .fee-notice { background: rgba(33,150,243,0.1); border: 2px solid var(--info); border-radius: 12px; padding: 1rem; margin: 1rem 0; color: var(--info); }
+        .payment-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+        .payment-method { background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1rem; cursor: pointer; text-align: center; position: relative; transition: all 0.3s; }
+        .payment-method.selected { border-color: var(--primary); background: rgba(233,30,99,0.1); }
+        .payment-method.unavailable { opacity: 0.4; cursor: not-allowed; border-color: var(--danger); }
+        .payment-method.unavailable:hover { transform: none; }
+        .unavailable-badge { position: absolute; top: -10px; right: -10px; background: var(--danger); color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem; font-weight: 800; }
+        .payment-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .btn-deposit { background: var(--success); color: white; border: none; padding: 1rem 3rem; border-radius: 12px; font-size: 1.2rem; font-weight: 700; cursor: pointer; margin-top: 1rem; }
+        .btn-deposit:disabled { background: #666; cursor: not-allowed; }
+        
+        .paymob-section { background: rgba(76,175,80,0.1); border: 2px solid var(--success); border-radius: 16px; padding: 1.5rem; margin-top: 1.5rem; display: none; }
+        .paymob-section.active { display: block; }
+        
+        .bulk-section { background: var(--card); border: 2px dashed var(--primary); border-radius: 24px; padding: 3rem; text-align: center; }
+        .upload-area { border: 3px dashed rgba(255,255,255,0.2); border-radius: 20px; padding: 3rem; cursor: pointer; margin: 2rem 0; transition: all 0.3s; }
+        .upload-area:hover { border-color: var(--primary); background: rgba(233,30,99,0.05); }
+        .upload-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .file-input { display: none; }
+        .template-btn { background: transparent; border: 2px solid var(--info); color: var(--info); padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; }
+        
+        .orders-list { background: var(--card); border-radius: 20px; padding: 2rem; }
+        .order-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
+        .order-status { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 700; }
+        .status.pending { background: rgba(255,193,7,0.2); color: var(--warning); }
+        .status.processing { background: rgba(33,150,243,0.2); color: var(--info); }
+        .status.completed { background: rgba(76,175,80,0.2); color: var(--success); }
+        
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; padding: 2rem; }
+        .modal.active { display: flex; }
+        .modal-content { background: var(--card); border: 2px solid var(--primary); border-radius: 24px; padding: 2rem; width: 100%; max-width: 500px; }
+        .qty-selector { display: flex; align-items: center; gap: 1.5rem; justify-content: center; margin: 1rem 0; }
+        .qty-btn { width: 50px; height: 50px; border-radius: 12px; border: 2px solid var(--primary); background: transparent; color: white; font-size: 1.5rem; cursor: pointer; }
+        .qty-value { font-size: 1.75rem; font-weight: 800; min-width: 100px; text-align: center; }
+        .total-box { background: rgba(233,30,99,0.1); border: 2px solid var(--primary); border-radius: 16px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0; }
+        .total-amount { font-size: 2rem; font-weight: 900; color: var(--primary); }
+        .btn-primary { width: 100%; padding: 1.25rem; background: var(--primary); border: none; border-radius: 12px; color: white; font-size: 1.2rem; font-weight: 800; cursor: pointer; }
+        
+        .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); border: 2px solid var(--primary); border-radius: 16px; padding: 1.5rem 2.5rem; z-index: 2000; transition: transform 0.3s; text-align: center; min-width: 300px; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.error { border-color: var(--danger); }
+        
+        .auto-status { background: rgba(76,175,80,0.1); border: 2px solid var(--success); border-radius: 16px; padding: 1.5rem; margin-bottom: 2rem; text-align: center; }
+        
+        .g-recaptcha { margin: 1rem 0; display: flex; justify-content: center; }
+        
+        .config-section { background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; text-align: left; font-size: 0.85rem; color: #888; }
+        .config-section input { width: 100%; margin-top: 0.5rem; padding: 0.5rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: white; font-family: monospace; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <!-- Language Toggle -->
+    <button class="lang-toggle" onclick="toggleLanguage()">
+        <span id="langIcon">🇬🇧</span>
+        <span id="langText">English</span>
+    </button>
+
+    <!-- AUTH PAGE -->
+    <div id="authPage" class="auth-container">
+        <div class="auth-box">
+            <div class="auth-logo">⚡ PROSOSKA STATION</div>
+            <p style="color: #888; margin-bottom: 2rem;" data-key="subtitle">Best Social Media Services</p>
+            
+            <!-- Configuration Section (Hide in production) -->
+            <div class="config-section" id="configSection">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span>🔧 API Configuration</span>
+                    <button onclick="toggleConfig()" style="background: transparent; border: none; color: var(--primary); cursor: pointer;">Show/Hide</button>
+                </div>
+                <div id="configInputs" style="display: none;">
+                    <label>Google Script URL:</label>
+                    <input type="text" id="configScriptUrl" placeholder="Enter Google Script URL">
+                    <label style="margin-top: 0.5rem; display: block;">Telegram Bot Token:</label>
+                    <input type="password" id="configBotToken" placeholder="Enter Bot Token">
+                    <label style="margin-top: 0.5rem; display: block;">Telegram Chat ID:</label>
+                    <input type="text" id="configChatId" placeholder="Enter Chat ID">
+                    <button onclick="saveConfig()" style="margin-top: 0.5rem; background: var(--success); border: none; color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; width: 100%;">Save Config</button>
+                </div>
+            </div>
+            
+            <!-- Google Sign In -->
+            <button class="google-btn" onclick="googleSignIn()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="white"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="white"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="white"/></svg>
+                <span data-key="googleSignIn">Sign in with Google</span>
+            </button>
+            
+            <div class="divider"><span data-key="or">OR</span></div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuth('login')" data-key="login">Login</button>
+                <button class="auth-tab" onclick="switchAuth('register')" data-key="register">Register</button>
+            </div>
+            
+            <form id="loginForm" class="auth-form active" onsubmit="login(event)">
+                <div class="form-group">
+                    <label class="form-label" data-key="email">Email</label>
+                    <input type="email" class="form-input" id="loginEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-key="password">Password</label>
+                    <input type="password" class="form-input" id="loginPassword" required>
+                </div>
+                <a class="forgot-link" onclick="showForgotPassword()" data-key="forgotPassword">Forgot Password?</a>
+                <button type="submit" class="btn-auth" data-key="loginBtn">Login</button>
+            </form>
+            
+            <form id="registerForm" class="auth-form" onsubmit="register(event)">
+                <div class="form-group">
+                    <label class="form-label" data-key="name">Name</label>
+                    <input type="text" class="form-input" id="regName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-key="email">Email</label>
+                    <input type="email" class="form-input" id="regEmail" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-key="phone">Phone</label>
+                    <input type="tel" class="form-input" id="regPhone" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" data-key="password">Password</label>
+                    <input type="password" class="form-input" id="regPassword" required>
+                </div>
+                <div class="g-recaptcha" data-sitekey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"></div>
+                <button type="submit" class="btn-auth" data-key="registerBtn">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div class="forgot-modal" id="forgotModal">
+        <div class="forgot-content">
+            <h2 style="color: var(--primary); margin-bottom: 1rem;" data-key="resetPassword">Reset Password</h2>
+            <p style="color: #888; margin-bottom: 1.5rem;" data-key="resetDesc">Enter your email to receive reset instructions</p>
+            <div class="form-group">
+                <input type="email" class="form-input" id="resetEmail" placeholder="Email" required>
+            </div>
+            <button class="btn-auth" onclick="sendResetLink()" data-key="sendLink">Send Reset Link</button>
+            <button class="btn-header" onclick="closeForgotModal()" style="margin-top: 1rem; background: transparent; border: 1px solid #666;" data-key="cancel">Cancel</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="mainApp">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">⚡ PROSOSKA STATION</div>
+                <div class="user-info">
+                    <span id="userName"></span>
+                    <div class="balance-pill">💰 <span id="userBalance">0</span> <span data-key="currency">EGP</span></div>
+                    <a href="admin.html" class="btn-header">🔧 <span data-key="adminPanel">Admin</span></a>
+                    <button class="btn-header btn-logout" onclick="logout()" data-key="logout">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="container">
+            <div class="auto-status">
+                <div style="font-size: 2rem;">🤖</div>
+                <h3 data-key="autoStatus">Auto Execution Active</h3>
+                <p style="color: #888;" data-key="autoDesc">Orders execute automatically on HEVO after 30 minutes</p>
+            </div>
+
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('services', this)" data-key="services">🛒 Services</div>
+                <div class="tab" onclick="showTab('bulk', this)" data-key="bulk">📊 Bulk</div>
+                <div class="tab" onclick="showTab('deposit', this)" data-key="deposit">💳 Deposit</div>
+                <div class="tab" onclick="showTab('orders', this)" data-key="orders">📋 My Orders</div>
+            </div>
+
+            <!-- Services -->
+            <div id="services" class="section active">
+                <div class="services-grid" id="servicesGrid"></div>
+            </div>
+
+            <!-- Bulk -->
+            <div id="bulk" class="section">
+                <div class="bulk-section">
+                    <h2 class="section-title" data-key="bulkTitle">📊 Bulk Orders Upload</h2>
+                    <div class="upload-area" onclick="document.getElementById('bulkFile').click()">
+                        <div class="upload-icon">📁</div>
+                        <h3 data-key="uploadText">Click or drag Excel file</h3>
+                        <p style="color: #888;">.xlsx or .csv</p>
+                        <input type="file" id="bulkFile" class="file-input" accept=".xlsx,.xls,.csv" onchange="handleBulk(event)">
+                    </div>
+                    <button class="template-btn" onclick="downloadTemplate()" data-key="downloadTemplate">Download Template</button>
+                    <div id="bulkPreview" style="display: none; margin-top: 2rem;">
+                        <div id="bulkList"></div>
+                        <button class="btn-primary" onclick="submitBulk()" style="margin-top: 1rem;" data-key="confirmAll">Confirm All</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deposit -->
+            <div id="deposit" class="section">
+                <div class="add-balance-section">
+                    <h2 class="section-title" data-key="depositTitle">💳 Deposit Balance</h2>
+                    <div class="preset-amounts">
+                        <button class="amount-btn" onclick="selectAmt(50, this)">50</button>
+                        <button class="amount-btn selected" onclick="selectAmt(100, this)">100</button>
+                        <button class="amount-btn" onclick="selectAmt(250, this)">250</button>
+                        <button class="amount-btn" onclick="selectAmt(500, this)">500</button>
+                        <button class="amount-btn" onclick="selectAmt(1000, this)">1000</button>
+                    </div>
+                    <div class="custom-amount">
+                        <span data-key="custom">Custom:</span>
+                        <input type="number" class="custom-input" id="customAmt" placeholder="Amount" oninput="updateFinal()">
+                    </div>
+                    <div class="fee-notice">
+                        ⚠️ <span data-key="processingFee">Processing Fee</span>: 10 <span data-key="currency">EGP</span>
+                        <div id="finalAmt" style="margin-top: 0.5rem; color: var(--success);">Final: 90 EGP</div>
+                    </div>
+                    
+                    <h3 style="margin: 1.5rem 0 1rem; color: #888;" data-key="selectMethod">Select Payment Method:</h3>
+                    
+                    <div class="payment-methods">
+                        <div class="payment-method unavailable" data-method="visa">
+                            <span class="unavailable-badge" data-key="unavailable">Unavailable</span>
+                            <div class="payment-icon">💳</div>
+                            <div>Visa</div>
+                        </div>
+                        <div class="payment-method unavailable" data-method="paypal">
+                            <span class="unavailable-badge" data-key="unavailable">Unavailable</span>
+                            <div class="payment-icon">P</div>
+                            <div>PayPal</div>
+                        </div>
+                        <div class="payment-method unavailable" data-method="stripe">
+                            <span class="unavailable-badge" data-key="unavailable">Unavailable</span>
+                            <div class="payment-icon">S</div>
+                            <div>Stripe</div>
+                        </div>
+                        <div class="payment-method unavailable" data-method="fawry">
+                            <span class="unavailable-badge" data-key="unavailable">Unavailable</span>
+                            <div class="payment-icon">F</div>
+                            <div>Fawry</div>
+                        </div>
+                        <div class="payment-method unavailable" data-method="crypto">
+                            <span class="unavailable-badge" data-key="unavailable">Unavailable</span>
+                            <div class="payment-icon">₿</div>
+                            <div>Crypto</div>
+                        </div>
+                        <div class="payment-method selected" onclick="selectPay(this, 'paymob')" data-method="paymob">
+                            <div class="payment-icon" style="color: var(--success);">💰</div>
+                            <div style="color: var(--success); font-weight: 800;">Paymob</div>
+                        </div>
+                    </div>
+                    
+                    <div class="paymob-section active" id="paymobSection">
+                        <h3 style="color: var(--success); margin-bottom: 1rem;">✅ Paymob Active</h3>
+                        <p style="color: #888; margin-bottom: 1rem;" data-key="paymobDesc">Secure payment via Paymob (Cards, Vodafone Cash, Etisalat Cash, Orange Money)</p>
+                        <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                                <span style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem;">💳 Cards</span>
+                                <span style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem;">📱 Vodafone Cash</span>
+                                <span style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem;">📱 Etisalat Cash</span>
+                                <span style="background: rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem;">📱 Orange Money</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-deposit" onclick="deposit()" data-key="confirmDeposit">Confirm Deposit</button>
+                </div>
+            </div>
+
+            <!-- Orders -->
+            <div id="orders" class="section">
+                <div class="orders-list" id="ordersList">
+                    <p style="text-align: center; color: #888;" data-key="noOrders">No orders yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Modal -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content">
+            <h2 style="text-align: center; color: var(--primary); margin-bottom: 1rem;" data-key="newOrder">New Order</h2>
+            <input type="hidden" id="selService">
+            <div class="form-group">
+                <label class="form-label" data-key="service">Service</label>
+                <input type="text" class="form-input" id="selServiceName" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-key="link">Link</label>
+                <input type="url" class="form-input" id="orderLink" placeholder="https://...">
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-key="quantity">Quantity</label>
+                <div class="qty-selector">
+                    <button class="qty-btn" onclick="chgQty(-1000)">-</button>
+                    <div class="qty-value" id="orderQty">1000</div>
+                    <button class="qty-btn" onclick="chgQty(1000)">+</button>
+                </div>
+            </div>
+            <div class="total-box">
+                <div data-key="total">Total</div>
+                <div class="total-amount" id="orderTotal">0 EGP</div>
+            </div>
+            <button class="btn-primary" onclick="submitOrder()" data-key="confirm">Confirm</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <div id="toastTitle" style="font-weight: 800; margin-bottom: 0.5rem;"></div>
+        <div id="toastMsg" style="color: #888;"></div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION - Using your provided credentials
+        // ==========================================
+        const CONFIG = {
+            GOOGLE_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbylKzl0bxU-wmsJb01xwTrGLZ_I5S6bmS7SOV8MyJNnTSQLn_lQNCdEUNoRXek0DOcuLw/exec',
+            BOT_TOKEN: '8079436579:AAGW2iBbqbOW5FyInKE-RjBW1EsccJvgqRA',
+            CHAT_ID: '7986362527',
+            // Paymob Config (Add your credentials)
+            PAYMOB_API_KEY: '', // Add your Paymob API key here
+            PAYMOB_INTEGRATION_ID: '' // Add your Paymob Integration ID here
+        };
+
+        // Config Management
+        function toggleConfig() {
+            const inputs = document.getElementById('configInputs');
+            inputs.style.display = inputs.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function saveConfig() {
+            CONFIG.GOOGLE_SCRIPT_URL = document.getElementById('configScriptUrl').value || CONFIG.GOOGLE_SCRIPT_URL;
+            CONFIG.BOT_TOKEN = document.getElementById('configBotToken').value || CONFIG.BOT_TOKEN;
+            CONFIG.CHAT_ID = document.getElementById('configChatId').value || CONFIG.CHAT_ID;
+            localStorage.setItem('prososka_config', JSON.stringify(CONFIG));
+            toast('Config Saved', 'Settings updated successfully');
+        }
+
+        // Load saved config
+        const savedConfig = localStorage.getItem('prososka_config');
+        if (savedConfig) {
+            Object.assign(CONFIG, JSON.parse(savedConfig));
+        }
+
+        // Populate config inputs
+        document.getElementById('configScriptUrl').value = CONFIG.GOOGLE_SCRIPT_URL;
+        document.getElementById('configBotToken').value = CONFIG.BOT_TOKEN;
+        document.getElementById('configChatId').value = CONFIG.CHAT_ID;
+
+        // ==========================================
+        // TRANSLATIONS
+        // ==========================================
+        const translations = {
+            en: {
+                subtitle: "Best Social Media Services",
+                googleSignIn: "Sign in with Google",
+                or: "OR",
+                login: "Login",
+                register: "Register",
+                email: "Email",
+                password: "Password",
+                forgotPassword: "Forgot Password?",
+                loginBtn: "Login",
+                name: "Name",
+                phone: "Phone",
+                registerBtn: "Register",
+                resetPassword: "Reset Password",
+                resetDesc: "Enter your email to receive reset instructions",
+                sendLink: "Send Reset Link",
+                cancel: "Cancel",
+                currency: "EGP",
+                adminPanel: "Admin",
+                logout: "Logout",
+                autoStatus: "Auto Execution Active",
+                autoDesc: "Orders execute automatically on HEVO after 30 minutes",
+                services: "🛒 Services",
+                bulk: "📊 Bulk",
+                deposit: "💳 Deposit",
+                orders: "📋 My Orders",
+                min: "Min",
+                max: "Max",
+                speed: "Instant",
+                bulkTitle: "📊 Bulk Orders Upload",
+                uploadText: "Click or drag Excel file",
+                downloadTemplate: "Download Template",
+                confirmAll: "Confirm All",
+                depositTitle: "💳 Deposit Balance",
+                custom: "Custom:",
+                processingFee: "Processing Fee",
+                confirmDeposit: "Confirm Deposit",
+                selectMethod: "Select Payment Method:",
+                unavailable: "Unavailable",
+                paymobDesc: "Secure payment via Paymob (Cards, Vodafone Cash, Etisalat Cash, Orange Money)",
+                noOrders: "No orders yet",
+                newOrder: "New Order",
+                service: "Service",
+                link: "Link",
+                quantity: "Quantity",
+                total: "Total",
+                confirm: "Confirm",
+                pending: "Pending",
+                processing: "Processing",
+                completed: "Completed",
+                insufficientBalance: "Insufficient Balance",
+                rechargePrompt: "Please recharge your balance",
+                error: "Error",
+                enterLink: "Please enter the link",
+                success: "Success",
+                orderId: "Order ID",
+                minAmount: "Minimum amount is 20 EGP",
+                depositSent: "Request Sent",
+                depositReview: "Payment will be reviewed and balance added"
+            },
+            ar: {
+                subtitle: "أفضل خدمات السوشيال ميديا",
+                googleSignIn: "التسجيل بحساب جوجل",
+                or: "أو",
+                login: "دخول",
+                register: "تسجيل",
+                email: "البريد الإلكتروني",
+                password: "كلمة المرور",
+                forgotPassword: "نسيت كلمة المرور؟",
+                loginBtn: "دخول",
+                name: "الاسم",
+                phone: "رقم الهاتف",
+                registerBtn: "تسجيل",
+                resetPassword: "إعادة تعيين كلمة المرور",
+                resetDesc: "أدخل بريدك الإلكتروني لاستلام تعليمات إعادة التعيين",
+                sendLink: "إرسال رابط التعيين",
+                cancel: "إلغاء",
+                currency: "ج.م",
+                adminPanel: "لوحة التحكم",
+                logout: "خروج",
+                autoStatus: "التنفيذ التلقائي مفعل",
+                autoDesc: "الطلبات تنفذ تلقائياً على HEVO بعد 30 دقيقة",
+                services: "🛒 الخدمات",
+                bulk: "📊 مجمعة",
+                deposit: "💳 شحن",
+                orders: "📋 طلباتي",
+                min: "حد أدنى",
+                max: "حد أقصى",
+                speed: "فوري",
+                bulkTitle: "📊 رفع طلبات مجمعة",
+                uploadText: "اضغط أو اسحب ملف Excel",
+                downloadTemplate: "تحميل قالب",
+                confirmAll: "تأكيد الكل",
+                depositTitle: "💳 شحن الرصيد",
+                custom: "مخصص:",
+                processingFee: "رسوم المعالجة",
+                confirmDeposit: "تأكيد الشحن",
+                selectMethod: "اختر طريقة الدفع:",
+                unavailable: "غير متاح",
+                paymobDesc: "دفع آمن عبر Paymob (بطاقات، فودافون كاش، اتصالات كاش، أورانج)",
+                noOrders: "لا توجد طلبات",
+                newOrder: "طلب جديد",
+                service: "الخدمة",
+                link: "الرابط",
+                quantity: "الكمية",
+                total: "الإجمالي",
+                confirm: "تأكيد",
+                pending: "قيد الانتظار",
+                processing: "جاري",
+                completed: "مكتمل",
+                insufficientBalance: "رصيد غير كافٍ",
+                rechargePrompt: "اشحن رصيدك",
+                error: "خطأ",
+                enterLink: "أدخل الرابط",
+                success: "تم",
+                orderId: "رقم الطلب",
+                minAmount: "الحد الأدنى 20 ج.م",
+                depositSent: "تم إرسال الطلب",
+                depositReview: "سيتم مراجعة الدفع وإضافة الرصيد"
+            }
+        };
+
+        let currentLang = localStorage.getItem('language') || 'en';
+        
+        function toggleLanguage() {
+            currentLang = currentLang === 'en' ? 'ar' : 'en';
+            localStorage.setItem('language', currentLang);
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const html = document.documentElement;
+            const icon = document.getElementById('langIcon');
+            const text = document.getElementById('langText');
+            
+            if (currentLang === 'ar') {
+                html.lang = 'ar';
+                html.dir = 'rtl';
+                icon.textContent = '🇪🇬';
+                text.textContent = 'العربية';
+            } else {
+                html.lang = 'en';
+                html.dir = 'ltr';
+                icon.textContent = '🇬🇧';
+                text.textContent = 'English';
+            }
+            
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (translations[currentLang][key]) {
+                    el.textContent = translations[currentLang][key];
+                }
+            });
+            
+            renderServices();
+            loadOrders();
+            updateFinal();
+        }
+
+        // ==========================================
+        // UPDATED PRICES (Higher for low-cost items)
+        // ==========================================
+        const MARKUP = 2.5;
+        const FEE = 10;
+        
+        const HEVO_PRICES = {
+            instagram_followers: 85,      // Was 45
+            instagram_likes: 55,          // Was 25
+            instagram_views: 35,          // Was 15
+            tiktok_followers: 140,        // Was 100
+            tiktok_likes: 70,             // Was 30
+            tiktok_views: 60,             // Was 30
+            youtube_views: 75,            // Was 40
+            youtube_subs: 120,            // Was 80
+            twitter_followers: 85,        // Was 50
+            telegram_members: 65,         // Was 35
+            facebook_followers: 75,       // Was 40
+            spotify_plays: 55             // Was 25
+        };
+        
+        const SERVICES = [
+            { id: 'instagram_followers', name: currentLang === 'ar' ? 'متابعين انستجرام' : 'Instagram Followers', icon: '📸', min: 100, max: 500000 },
+            { id: 'instagram_likes', name: currentLang === 'ar' ? 'لايكات انستجرام' : 'Instagram Likes', icon: '❤️', min: 50, max: 100000 },
+            { id: 'instagram_views', name: currentLang === 'ar' ? 'مشاهدات انستجرام' : 'Instagram Views', icon: '👁️', min: 100, max: 5000000 },
+            { id: 'tiktok_followers', name: currentLang === 'ar' ? 'متابعين تيك توك' : 'TikTok Followers', icon: '🎵', min: 100, max: 1000000 },
+            { id: 'tiktok_likes', name: currentLang === 'ar' ? 'لايكات تيك توك' : 'TikTok Likes', icon: '❤️', min: 100, max: 2000000 },
+            { id: 'youtube_views', name: currentLang === 'ar' ? 'مشاهدات يوتيوب' : 'YouTube Views', icon: '▶️', min: 1000, max: 10000000 },
+            { id: 'youtube_subs', name: currentLang === 'ar' ? 'مشتركين يوتيوب' : 'YouTube Subscribers', icon: '🔔', min: 100, max: 500000 },
+            { id: 'twitter_followers', name: currentLang === 'ar' ? 'متابعين تويتر' : 'Twitter Followers', icon: '🐦', min: 100, max: 500000 },
+            { id: 'telegram_members', name: currentLang === 'ar' ? 'أعضاء تيليجرام' : 'Telegram Members', icon: '✈️', min: 100, max: 500000 },
+            { id: 'facebook_followers', name: currentLang === 'ar' ? 'متابعين فيسبوك' : 'Facebook Followers', icon: '👥', min: 100, max: 200000 },
+            { id: 'spotify_plays', name: currentLang === 'ar' ? 'تشغيلات سبوتيفاي' : 'Spotify Plays', icon: '🎧', min: 1000, max: 10000000 }
+        ];
+        
+        // ==========================================
+        // STATE
+        // ==========================================
+        let currentUser = null;
+        let selService = null;
+        let orderQty = 1000;
+        let selAmount = 100;
+        let selPayment = 'paymob';
+        let bulkOrders = [];
+        
+        // ==========================================
+        // AUTH FUNCTIONS
+        // ==========================================
+        function switchAuth(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Form').classList.add('active');
+        }
+        
+        function googleSignIn() {
+            google.accounts.id.initialize({
+                client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+                callback: handleGoogleCredential
+            });
+            google.accounts.id.prompt();
+        }
+
+        function handleGoogleCredential(response) {
+            const payload = JSON.parse(atob(response.credential.split('.')[1]));
+            
+            const user = {
+                id: 'google_' + payload.sub,
+                name: payload.name,
+                email: payload.email,
+                phone: '',
+                password: 'google_oauth',
+                balance: 0,
+                provider: 'google'
+            };
+            
+            let users = JSON.parse(localStorage.getItem('users') || '[]');
+            const existing = users.find(u => u.email === user.email);
+            
+            if (existing) {
+                currentUser = existing;
+            } else {
+                users.push(user);
+                localStorage.setItem('users', JSON.stringify(users));
+                currentUser = user;
+                sendToSheet({ type: 'user', ...user });
+            }
+            
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            showApp();
+            toast(translations[currentLang].success, translations[currentLang].login + ' ' + (currentLang === 'ar' ? 'ناجح' : 'Successful'));
+        }
+        
+        function login(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.email === email && u.password === pass);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showApp();
+            } else {
+                toast(translations[currentLang].error, currentLang === 'ar' ? 'بيانات غير صحيحة' : 'Invalid credentials', 'error');
+            }
+        }
+        
+        function register(e) {
+            e.preventDefault();
+            
+            const recaptchaResponse = grecaptcha.getResponse();
+            if (!recaptchaResponse) {
+                toast(translations[currentLang].error, currentLang === 'ar' ? 'يرجى إكمال التحقق' : 'Please complete verification', 'error');
+                return;
+            }
+            
+            const user = {
+                id: Date.now().toString(),
+                name: document.getElementById('regName').value,
+                email: document.getElementById('regEmail').value,
+                phone: document.getElementById('regPhone').value,
+                password: document.getElementById('regPassword').value,
+                balance: 0
+            };
+            
+            let users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (users.find(u => u.email === user.email)) {
+                toast(translations[currentLang].error, currentLang === 'ar' ? 'البريد مستخدم' : 'Email already used', 'error');
+                return;
+            }
+            
+            users.push(user);
+            localStorage.setItem('users', JSON.stringify(users));
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            
+            sendToSheet({ type: 'user', ...user });
+            grecaptcha.reset();
+            showApp();
+            toast(translations[currentLang].success, currentLang === 'ar' ? 'تم إنشاء الحساب' : 'Account created');
+        }
+        
+        function showForgotPassword() {
+            document.getElementById('forgotModal').classList.add('active');
+        }
+        
+        function closeForgotModal() {
+            document.getElementById('forgotModal').classList.remove('active');
+        }
+        
+        function sendResetLink() {
+            const email = document.getElementById('resetEmail').value;
+            if (!email) {
+                toast(translations[currentLang].error, currentLang === 'ar' ? 'أدخل البريد' : 'Enter email', 'error');
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.email === email);
+            
+            if (!user) {
+                toast(translations[currentLang].error, currentLang === 'ar' ? 'البريد غير مسجل' : 'Email not found', 'error');
+                return;
+            }
+            
+            const resetToken = 'RST-' + Date.now();
+            user.resetToken = resetToken;
+            user.resetExpiry = Date.now() + 3600000;
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            sendTg(`🔑 Password Reset Request\nEmail: ${email}\nToken: ${resetToken}`);
+            
+            toast(translations[currentLang].success, currentLang === 'ar' ? 'تم إرسال التعليمات' : 'Instructions sent');
+            closeForgotModal();
+        }
+        
+        function logout() {
+            localStorage.removeItem('currentUser');
+            location.reload();
+        }
+        
+        function showApp() {
+            document.getElementById('authPage').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('userName').textContent = currentUser.name;
+            updateBalance();
+            renderServices();
+            loadOrders();
+        }
+        
+        if (localStorage.getItem('currentUser')) {
+            currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            showApp();
+        }
+        
+        applyLanguage();
+        
+        // ==========================================
+        // APP FUNCTIONS
+        // ==========================================
+        function showTab(tab, el) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById(tab).classList.add('active');
+        }
+        
+        function updateBalance() {
+            document.getElementById('userBalance').textContent = currentUser.balance.toLocaleString();
+        }
+        
+        function saveUser() {
+            let users = JSON.parse(localStorage.getItem('users') || '[]');
+            const idx = users.findIndex(u => u.id === currentUser.id);
+            if (idx !== -1) {
+                users[idx] = currentUser;
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+        }
+        
+        // ==========================================
+        // SERVICES
+        // ==========================================
+        function renderServices() {
+            const grid = document.getElementById('servicesGrid');
+            grid.innerHTML = SERVICES.map(s => {
+                const price = Math.round((HEVO_PRICES[s.id] || 50) * MARKUP);
+                const minText = translations[currentLang].min;
+                const maxText = translations[currentLang].max;
+                const speedText = translations[currentLang].speed;
+                
+                return `
+                    <div class="service-card" onclick="openOrder('${s.id}')">
+                        <div class="service-header">
+                            <div>
+                                <div style="font-size: 2.5rem;">${s.icon}</div>
+                                <div class="service-name">${s.name}</div>
+                            </div>
+                            <div class="price-tag">${price} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</div>
+                        </div>
+                        <div class="service-stats">
+                            <div class="stat"><div class="stat-value">${s.min}</div><div style="font-size: 0.8rem; color: #888;">${minText}</div></div>
+                            <div class="stat"><div class="stat-value">${s.max}</div><div style="font-size: 0.8rem; color: #888;">${maxText}</div></div>
+                            <div class="stat"><div class="stat-value">${speedText}</div><div style="font-size: 0.8rem; color: #888;">${currentLang === 'ar' ? 'سرعة' : 'Speed'}</div></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function openOrder(sid) {
+            selService = SERVICES.find(s => s.id === sid);
+            document.getElementById('selService').value = sid;
+            document.getElementById('selServiceName').value = selService.name;
+            orderQty = selService.min;
+            document.getElementById('orderQty').textContent = orderQty;
+            updateOrderTotal();
+            document.getElementById('orderModal').classList.add('active');
+        }
+        
+        function chgQty(delta) {
+            const nq = orderQty + delta;
+            if (nq >= selService.min && nq <= selService.max) {
+                orderQty = nq;
+                document.getElementById('orderQty').textContent = orderQty;
+                updateOrderTotal();
+            }
+        }
+        
+        function updateOrderTotal() {
+            const hp = HEVO_PRICES[selService.id] || 50;
+            const total = Math.round((orderQty / 1000) * hp * MARKUP);
+            const currency = currentLang === 'ar' ? 'ج.م' : 'EGP';
+            document.getElementById('orderTotal').textContent = total + ' ' + currency;
+        }
+        
+        function submitOrder() {
+            const link = document.getElementById('orderLink').value;
+            if (!link) {
+                toast(translations[currentLang].error, translations[currentLang].enterLink, 'error');
+                return;
+            }
+            
+            const hp = HEVO_PRICES[selService.id] || 50;
+            const total = Math.round((orderQty / 1000) * hp * MARKUP);
+            
+            if (total > currentUser.balance) {
+                toast(translations[currentLang].insufficientBalance, translations[currentLang].rechargePrompt, 'error');
+                return;
+            }
+            
+            currentUser.balance -= total;
+            saveUser();
+            updateBalance();
+            
+            const order = {
+                type: 'order',
+                orderId: 'ORD-' + Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                service: selService.id,
+                serviceName: selService.name,
+                link: link,
+                quantity: orderQty,
+                customerPrice: total,
+                hevoCost: Math.round((orderQty / 1000) * hp),
+                profit: total - Math.round((orderQty / 1000) * hp),
+                status: 'pending',
+                hevoStatus: 'waiting_30min',
+                timestamp: new Date().toISOString()
+            };
+            
+            saveOrder(order);
+            sendToSheet(order);
+            sendTg(`🛒 Order from ${currentUser.name}\n${selService.name} x${orderQty}\n${total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`);
+            
+            closeOrder();
+            toast(translations[currentLang].success, `${translations[currentLang].orderId}: ${order.orderId}`);
+            document.getElementById('orderLink').value = '';
+            loadOrders();
+        }
+        
+        function closeOrder() {
+            document.getElementById('orderModal').classList.remove('active');
+        }
+        
+        function saveOrder(order) {
+            const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+            orders.push(order);
+            localStorage.setItem('orders', JSON.stringify(orders));
+        }
+        
+        function loadOrders() {
+            const all = JSON.parse(localStorage.getItem('orders') || '[]');
+            const mine = all.filter(o => o.userId === currentUser.id).reverse();
+            const container = document.getElementById('ordersList');
+            
+            if (mine.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: #888;">${translations[currentLang].noOrders}</p>`;
+                return;
+            }
+            
+            container.innerHTML = mine.map(o => {
+                const statusText = translations[currentLang][o.status] || o.status;
+                return `
+                    <div class="order-item">
+                        <div>
+                            <div style="font-weight: 700;">${o.serviceName}</div>
+                            <div style="color: #888; font-size: 0.85rem;">${o.link}</div>
+                            <div style="font-size: 0.8rem; margin-top: 0.5rem;">${new Date(o.timestamp).toLocaleString(currentLang === 'ar' ? 'ar-EG' : 'en-US')}</div>
+                        </div>
+                        <div style="text-align: ${currentLang === 'ar' ? 'left' : 'right'};">
+                            <div style="font-weight: 800; color: var(--primary);">${o.customerPrice} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}</div>
+                            <span class="order-status status ${o.status}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // ==========================================
+        // BULK UPLOAD
+        // ==========================================
+        function downloadTemplate() {
+            const data = [
+                ['service', 'link', 'quantity'],
+                ['instagram_followers', 'https://instagram.com/user', '1000'],
+                ['tiktok_followers', 'https://tiktok.com/@user', '5000']
+            ];
+            const ws = XLSX.utils.aoa_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+            XLSX.writeFile(wb, 'HEVO_Template.xlsx');
+        }
+        
+        function handleBulk(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet);
+                
+                bulkOrders = rows.map((r, i) => ({
+                    id: 'BLK-' + Date.now() + '-' + i,
+                    service: r.service || r.Service || r.الخدمة,
+                    link: r.link || r.Link || r.الرابط,
+                    quantity: parseInt(r.quantity || r.Quantity || r.الكمية) || 1000
+                })).filter(o => o.service && o.link);
+                
+                showBulkPreview();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function showBulkPreview() {
+            let total = 0;
+            const currency = currentLang === 'ar' ? 'ج.م' : 'EGP';
+            
+            const html = bulkOrders.map(o => {
+                const s = SERVICES.find(x => x.id === o.service);
+                const hp = HEVO_PRICES[o.service] || 50;
+                const price = Math.round((o.quantity / 1000) * hp * MARKUP);
+                total += price;
+                return `
+                    <div class="order-item" style="text-align: ${currentLang === 'ar' ? 'right' : 'left'};">
+                        <div>
+                            <div style="font-weight: 700;">${s ? s.name : o.service}</div>
+                            <div style="color: #888; font-size: 0.9rem;">${o.link}</div>
+                            <div style="color: var(--primary);">${o.quantity}</div>
+                        </div>
+                        <div style="font-weight: 800;">${price} ${currency}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            document.getElementById('bulkList').innerHTML = html + `
+                <div class="total-box" style="margin-top: 1rem;">
+                    <div>${translations[currentLang].total}</div>
+                    <div class="total-amount">${total} ${currency}</div>
+                </div>
+            `;
+            document.getElementById('bulkPreview').style.display = 'block';
+        }
+        
+        function submitBulk() {
+            const total = bulkOrders.reduce((sum, o) => {
+                const hp = HEVO_PRICES[o.service] || 50;
+                return sum + Math.round((o.quantity / 1000) * hp * MARKUP);
+            }, 0);
+            
+            if (total > currentUser.balance) {
+                toast(translations[currentLang].insufficientBalance, `${currentLang === 'ar' ? 'المطلوب' : 'Required'}: ${total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`, 'error');
+                return;
+            }
+            
+            bulkOrders.forEach(o => {
+                const s = SERVICES.find(x => x.id === o.service);
+                const hp = HEVO_PRICES[o.service] || 50;
+                const price = Math.round((o.quantity / 1000) * hp * MARKUP);
+                
+                currentUser.balance -= price;
+                
+                const order = {
+                    type: 'order',
+                    orderId: o.id,
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    service: o.service,
+                    serviceName: s ? s.name : o.service,
+                    link: o.link,
+                    quantity: o.quantity,
+                    customerPrice: price,
+                    hevoCost: Math.round((o.quantity / 1000) * hp),
+                    profit: price - Math.round((o.quantity / 1000) * hp),
+                    status: 'pending',
+                    hevoStatus: 'waiting_30min',
+                    isBulk: true,
+                    timestamp: new Date().toISOString()
+                };
+                
+                saveOrder(order);
+                sendToSheet(order);
+            });
+            
+            saveUser();
+            updateBalance();
+            sendTg(`📊 Bulk orders from ${currentUser.name}\n${bulkOrders.length} ${currentLang === 'ar' ? 'طلبات' : 'orders'}\n${total} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`);
+            
+            toast(translations[currentLang].success, `${bulkOrders.length} ${currentLang === 'ar' ? 'طلبات تم إرسالها' : 'orders submitted'}`);
+            document.getElementById('bulkPreview').style.display = 'none';
+            document.getElementById('bulkFile').value = '';
+            bulkOrders = [];
+            loadOrders();
+        }
+        
+        // ==========================================
+        // DEPOSIT - PAYMOB INTEGRATION
+        // ==========================================
+        function selectAmt(amt, btn) {
+            selAmount = amt;
+            document.getElementById('customAmt').value = '';
+            document.querySelectorAll('.amount-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            updateFinal();
+        }
+        
+        function selectPay(el, method) {
+            if (el.classList.contains('unavailable')) {
+                toast(translations[currentLang].error, currentLang === 'ar' ? 'هذه الطريقة غير متاحة حالياً' : 'This method is currently unavailable', 'error');
+                return;
+            }
+            
+            selPayment = method;
+            document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            const paymobSection = document.getElementById('paymobSection');
+            if (method === 'paymob') {
+                paymobSection.classList.add('active');
+            } else {
+                paymobSection.classList.remove('active');
+            }
+        }
+        
+        function updateFinal() {
+            const custom = parseInt(document.getElementById('customAmt').value) || 0;
+            const amt = custom || selAmount;
+            const final = Math.max(0, amt - FEE);
+            const currency = currentLang === 'ar' ? 'ج.م' : 'EGP';
+            document.getElementById('finalAmt').textContent = `${currentLang === 'ar' ? 'النهائي' : 'Final'}: ${final} ${currency} (${currentLang === 'ar' ? 'بعد خصم' : 'after'} ${FEE} ${currency} ${currentLang === 'ar' ? 'رسوم' : 'fee'})`;
+        }
+        
+        async function initPaymobPayment(amount) {
+            if (!CONFIG.PAYMOB_API_KEY || !CONFIG.PAYMOB_INTEGRATION_ID) {
+                // Fallback: Manual payment notification
+                return { success: true, manual: true };
+            }
+            
+            try {
+                const authResponse = await fetch('https://accept.paymob.com/api/auth/tokens', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: CONFIG.PAYMOB_API_KEY })
+                });
+                const authData = await authResponse.json();
+                const token = authData.token;
+                
+                const orderResponse = await fetch('https://accept.paymob.com/api/ecommerce/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        auth_token: token,
+                        delivery_needed: false,
+                        amount_cents: amount * 100,
+                        currency: 'EGP',
+                        items: []
+                    })
+                });
+                const orderData = await orderResponse.json();
+                
+                const paymentKeyResponse = await fetch('https://accept.paymob.com/api/acceptance/payment_keys', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        auth_token: token,
+                        amount_cents: amount * 100,
+                        expiration: 3600,
+                        order_id: orderData.id,
+                        billing_data: {
+                            first_name: currentUser.name,
+                            last_name: currentUser.name,
+                            email: currentUser.email,
+                            phone_number: currentUser.phone || '01000000000',
+                            country: 'EG',
+                            city: 'Cairo',
+                            street: 'Street',
+                            building: '1',
+                            floor: '1',
+                            apartment: '1'
+                        },
+                        currency: 'EGP',
+                        integration_id: CONFIG.PAYMOB_INTEGRATION_ID
+                    })
+                });
+                const paymentKeyData = await paymentKeyResponse.json();
+                
+                const iframeURL = `https://accept.paymob.com/api/acceptance/iframes/${CONFIG.PAYMOB_INTEGRATION_ID}?payment_token=${paymentKeyData.token}`;
+                window.open(iframeURL, '_blank');
+                
+                return { success: true, orderId: orderData.id };
+            } catch (error) {
+                console.error('Paymob error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        function deposit() {
+            const custom = parseInt(document.getElementById('customAmt').value) || 0;
+            const amt = custom || selAmount;
+            
+            if (amt < 20) {
+                toast(translations[currentLang].error, translations[currentLang].minAmount, 'error');
+                return;
+            }
+            
+            if (selPayment === 'paymob') {
+                initPaymobPayment(amt).then(result => {
+                    const deposit = {
+                        type: 'deposit',
+                        userId: currentUser.id,
+                        amount: amt,
+                        fee: FEE,
+                        finalAmount: amt - FEE,
+                        method: 'paymob',
+                        status: 'pending',
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    if (result.orderId) {
+                        deposit.paymobOrderId = result.orderId;
+                    }
+                    
+                    const deposits = JSON.parse(localStorage.getItem('deposits') || '[]');
+                    deposits.push(deposit);
+                    localStorage.setItem('deposits', JSON.stringify(deposits));
+                    
+                    sendToSheet(deposit);
+                    sendTg(`💰 Paymob deposit from ${currentUser.name}\n${amt} ${currentLang === 'ar' ? 'ج.م' : 'EGP'}`);
+                    
+                    toast(translations[currentLang].depositSent, translations[currentLang].depositReview);
+                });
+            }
+        }
+        
+        // ==========================================
+        // UTILITIES
+        // ==========================================
+        function sendToSheet(data) {
+            fetch(CONFIG.GOOGLE_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).catch(() => {});
+        }
+        
+        function sendTg(msg) {
+            fetch(`https://api.telegram.org/bot${CONFIG.BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: CONFIG.CHAT_ID, text: msg, parse_mode: 'HTML' })
+            }).catch(() => {});
+        }
+        
+        function toast(title, msg, type) {
+            const t = document.getElementById('toast');
+            t.className = 'toast ' + (type === 'error' ? 'error' : '');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastMsg').textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 4000);
+        }
+        
+        document.querySelectorAll('.modal').forEach(m => {
+            m.addEventListener('click', (e) => {
+                if (e.target === m) m.classList.remove('active');
+            });
+        });
+    </script>
+</body>
+</html>
