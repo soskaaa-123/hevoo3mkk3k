@@ -1789,12 +1789,12 @@
             renderHezo();
         });
     </script>
-    <script type="module">
-  // Import the functions you need from the SDKs you need
+ <!-- 1. The Firebase SDK (The 'Brain' of the login) -->
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-  // Your web app's Firebase configuration (COPY THIS FROM YOUR FIREBASE SCREEN)
+  // Your exact config from the screenshot
   const firebaseConfig = {
     apiKey: "AIzaSyC8Kf6nWKEsM2WLEPN9Tqub65PYhXRAvQM",
     authDomain: "prososkastation.firebaseapp.com",
@@ -1804,25 +1804,33 @@
     appId: "1:103229744331:web:81d02b03792bc6df4039ee"
   };
 
-  // Initialize Firebase
+  // Initialize
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
 
-  // THE LOGIN FUNCTION
+  // THIS IS THE FIX: We attach the function to "window" 
+  // so your HTML button can actually find it.
   window.loginWithGoogle = function() {
     signInWithPopup(auth, provider)
       .then((result) => {
         const user = result.user;
-        console.log("Logged in as:", user.displayName);
-        alert("Welcome, " + user.displayName + "!");
+        alert("Welcome to ProSoskaStation, " + user.displayName + "!");
         
-        // Update your UI here
-        document.getElementById('user-name').innerText = user.displayName;
+        // This updates a name on your page if you have an element with id="user-name"
+        if(document.getElementById('user-name')) {
+            document.getElementById('user-name').innerText = user.displayName;
+        }
       }).catch((error) => {
-        console.error("Login failed:", error.message);
+        console.error("Login failed:", error.code);
+        alert("Login failed! Make sure you enabled Google in Firebase Console.");
       });
   }
 </script>
+
+<!-- 2. The Button (Place this wherever you want the login button to be) -->
+<button onclick="loginWithGoogle()" style="cursor:pointer; padding: 10px; border-radius: 8px; background: #4285F4; color: white; border: none;">
+  <i class="fab fa-google"></i> Sign in with Google
+</button>
 </body>
 </html>
