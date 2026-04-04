@@ -1789,5 +1789,40 @@
             renderHezo();
         });
     </script>
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+  // Your web app's Firebase configuration (COPY THIS FROM YOUR FIREBASE SCREEN)
+  const firebaseConfig = {
+    apiKey: "AIzaSyC8Kf6nWKEsM2WLEPN9Tqub65PYhXRAvQM",
+    authDomain: "prososkastation.firebaseapp.com",
+    projectId: "prososkastation",
+    storageBucket: "prososkastation.firebasestorage.app",
+    messagingSenderId: "103229744331",
+    appId: "1:103229744331:web:81d02b03792bc6df4039ee"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  // THE LOGIN FUNCTION
+  window.loginWithGoogle = function() {
+    signInWithPopup(auth, provider)
+      .then((result) => {
+        const user = result.user;
+        console.log("Logged in as:", user.displayName);
+        alert("Welcome, " + user.displayName + "!");
+        
+        // Update your UI here
+        document.getElementById('user-name').innerText = user.displayName;
+      }).catch((error) => {
+        console.error("Login failed:", error.message);
+      });
+  }
+</script>
 </body>
 </html>
